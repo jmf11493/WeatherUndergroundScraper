@@ -7,41 +7,55 @@ import sys
 from scraper import Scraper
 import datetime
 import os
-if __name__ == '__main__':
-    config_file_path = os.getcwd() + '\config.csv'
+from os.path import exists
 
-    weatherHistoryFileDataPath = ""
-    weatherFileDataPath = ""
-    url = ""
-    with open(config_file_path,'r') as config_file:
-        contents = config_file.read()
-        data = contents.split(',')
-        weatherFileDataPath = data[0]
-        weatherHistoryFileDataPath = data[1]
-        url = data[2]
+if __name__ == '__main__':
+    configFilePath = os.getcwd() + '\config.csv'
+
+    weatherHistoryFileDataPath = "C:/"
+    weatherFileDataPath = "C:/"
+    url = "ny/buffalo/KBUF/date/"
+    
+    if exists(configFilePath):
+        with open(configFilePath,'r') as configFile:
+            contents = configFile.read()
+            data = contents.split(',')
+            weatherFileDataPath = data[0]
+            weatherHistoryFileDataPath = data[1]
+            url = data[2]
+    
     scrape = Scraper()
     now = datetime.datetime.now()
-    year = int(now.year)
-    month = int(now.month)
-    # always get the previous day
-    day = int(now.day - 1)
+    endDate = datetime.date(now.year, now.month, now.day)
+    prettyEndDate = endDate.strftime('%Y-%m-%d')
     
-    file = open(weatherHistoryFileDataPath, "r")
-    lastLine = file.readlines()[-1]
-    file.close()
-    pastYear = None
-    pastMonth = None
-    pastDay = None
-    pastDate = None
-    if lastLine:
-        pastDate = lastLine.split(',')[0]
-        pastDateSplit = pastDate.split('-')
-        pastYear = int(pastDateSplit[0])
-        pastMonth = int(pastDateSplit[1])
-        pastDay = int(pastDateSplit[2])
-    today = '-'.join([str(year),str(month),str(day)])
-    scrapeLog = 'Scraping from: ' + str(pastDate) + ' to: ' + today
+    altStartDate = datetime.date(2020, 8, 1)
+    
+    # Get start date from file
+    if exists(weatherHistoryFileDataPath):
+        file = open(weatherHistoryFileDataPath, "r")
+        lastLine = file.readlines()[-1]
+        file.close()
+        
+        pastYear = None
+        pastMonth = None
+        pastDay = None
+        pastDate = None
+        
+        if lastLine:
+            pastDate = lastLine.split(',')[0]
+            pastDateSplit = pastDate.split('-')
+            pastYear = int(pastDateSplit[0])
+            pastMonth = int(pastDateSplit[1])
+            pastDay = int(pastDateSplit[2])
+        
+        lastDate = datetime.date(int(pastYear), int(pastMonth), int(pastDay))
+        startDate = lastDate + datetime.timedelta(days=1)
+    else:
+        startDate = altStartDate
+    
+    scrapeLog = 'Scraping from: ' + str(startDate) + ' to: ' + prettyEndDate
     print(scrapeLog)
     
-    scrape.scrape(pastYear, pastMonth, pastDay, year, month, day, weatherFileDataPath, url)
+    scrape.scrape(startDate, endDate, weatherFileDataPath, url)
     sys.exit()

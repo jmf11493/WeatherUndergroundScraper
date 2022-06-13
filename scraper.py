@@ -8,13 +8,12 @@ import time
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
+import datetime
 
 class Scraper(object):
     '''
     classdocs
     '''
-    # TODO use actual date class that will account for leap year
-    days   = [31, 28, 31, 30, 30, 31, 31, 31, 30, 31, 30, 31]
     url = "https://www.wunderground.com/history/daily/us/"
     driver = webdriver.Chrome(ChromeDriverManager().install())
     
@@ -28,60 +27,51 @@ class Scraper(object):
         '''
         Constructor
         '''
-    def scrape(self, startYear, startMonth, startDay, endYear, endMonth, endDay, weatherFileDataPath, url):
-        allDone = False
+    
+    def scrape(self, startDate, endDate, weatherFileDataPath, url):
         self.weatherFileDataPath = weatherFileDataPath
         self.url = self.url + url
-        # TODO don't hard code the end year
-        for year in range(startYear, 2023):
-            for month in range(startMonth, 13):
-                for day in range(startDay, self.days[month-1]+1):
-                    date = str(year) + '-' + str(month) + '-' + str(day)
-                    print(date)
-                    tempUrl = self.url + date
+        
+        while startDate != endDate:
+            year = startDate.year
+            month = startDate.month
+            day = startDate.day
+            date = str(year) + '-' + str(month) + '-' + str(day)
+            print(date)
+            
+            tempUrl = self.url + date
+            hasException = False
+            exceptionMessage = ''
+            sleepCount = 1
+            retryCount = 10
+            retry = 1
+            
+            while retry < retryCount:
+                try:
+                    data_arr = self.getPageData(tempUrl, sleepCount)
+                    historyData = self.getHistoryData(data_arr, date)
+                    sunData = self.getSunData(data_arr, date)
+                    observationData = self.getObservationData(data_arr, date, retry)
                     hasException = False
-                    exceptionMessage = ''
-                    sleepCount = 1
-                    retryCount = 10
-                    retry = 1
-                    while retry < retryCount:
-                        try:
-                            data_arr = self.getPageData(tempUrl, sleepCount)
-                            historyData = self.getHistoryData(data_arr, date)
-                            sunData = self.getSunData(data_arr, date)
-                            observationData = self.getObservationData(data_arr, date, retry)
-                            hasException = False
-                            break
-                        except Exception as err:
-                            # implement retry
-                            hasException = True
-                            exceptionMessage = str(err)
-                            print('Error with date: ' + date + ' error: ' + exceptionMessage)
-                            print('Retry Attempt: ' + str(retry))
-                            sleepCount += 1
-                            retry += 1
-                            
-                    if not hasException:
-                        self.appendToFile(self.weatherFileDataPath + self.weatherHistory, historyData)
-                        self.appendToFile(self.weatherFileDataPath + self.weatherSunData, sunData)
-                        self.appendToFile(self.weatherFileDataPath + self.weatherObservations, observationData)
-                    else:
-                        print('Error with date: ' + date + ' writing to log')
-                        self.appendToFile(self.weatherFileDataPath + 'log.txt', date + ' Error: ' + exceptionMessage + '\n')
-                    if year == endYear and month == endMonth and day == endDay:
-                        print('All Done')
-                        allDone = True
-                        break
-                    if day == self.days[month-1]:
-                        startDay = 0
-                    startDay+=1
-                if allDone:
                     break
-                if startMonth == 12:
-                    startMonth = 0
-                startMonth+=1
-            if allDone:
-                break
+                except Exception as err:
+                    hasException = True
+                    exceptionMessage = str(err)
+                    print('Error with date: ' + date + ' error: ' + exceptionMessage)
+                    print('Retry Attempt: ' + str(retry))
+                    sleepCount += 1
+                    retry += 1
+                    
+            if not hasException:
+                self.appendToFile(self.weatherFileDataPath + self.weatherHistory, historyData)
+                self.appendToFile(self.weatherFileDataPath + self.weatherSunData, sunData)
+                self.appendToFile(self.weatherFileDataPath + self.weatherObservations, observationData)
+            else:
+                print('Error with date: ' + date + ' writing to log')
+                self.appendToFile(self.weatherFileDataPath + 'log.txt', date + ' Error: ' + exceptionMessage + '\n')
+            
+            startDate = startDate + datetime.timedelta(days=1)
+        print('All Done')
         self.driver.close()
 
     def getPageData(self, tempUrl, sleepCount):
@@ -168,11 +158,8 @@ class Scraper(object):
             startIndex = 85
         table = ''
         tableToFile = ''
-        # sometimes there are more than 24 entries as they report multiple times per hour
-        # TODO need to account for this, see dates 2022-4-12 - 2022-4-17
-        while i < 24:
-            if startIndex > len(data_arr)-1:
-                break
+        print(data_arr)
+        while startIndex < len(data_arr)-1:
             timeOfDay     = data_arr[startIndex]
             temp          = data_arr[startIndex+1]
             dew           = data_arr[startIndex+3]

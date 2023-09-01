@@ -17,7 +17,7 @@ if __name__ == '__main__':
     url = "ny/buffalo/KBUF/date/"
     
     if exists(configFilePath):
-        with open(configFilePath,'r') as configFile:
+        with open(configFilePath, 'r') as configFile:
             contents = configFile.read()
             data = contents.split(',')
             weatherFileDataPath = data[0]

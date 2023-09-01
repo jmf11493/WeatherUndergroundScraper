@@ -6,77 +6,72 @@ Created on Feb 15, 2022
 
 import time
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import datetime
 
-class Scraper(object):
+
+class Scraper:
     '''
     classdocs
     '''
     url = "https://www.wunderground.com/history/daily/us/"
-    driver = webdriver.Chrome(ChromeDriverManager().install())
-    
+    driver = webdriver.Chrome()
+
     weatherFileDataPath = ""
     
     weatherHistory = 'Weather_History.txt'
     weatherSunData = 'Weather_Sun_Data.txt'
     weatherObservations = 'Weather_Observations.txt'
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
     
-    def scrape(self, startDate, endDate, weatherFileDataPath, url):
-        self.weatherFileDataPath = weatherFileDataPath
+    def scrape(self, start_date, end_date, weather_file_data_path, url):
+        self.weatherFileDataPath = weather_file_data_path
         self.url = self.url + url
         
-        while startDate != endDate:
-            year = startDate.year
-            month = startDate.month
-            day = startDate.day
+        while start_date != end_date:
+            year = start_date.year
+            month = start_date.month
+            day = start_date.day
             date = str(year) + '-' + str(month) + '-' + str(day)
             print(date)
             
-            tempUrl = self.url + date
-            hasException = False
-            exceptionMessage = ''
-            sleepCount = 1
-            retryCount = 10
+            temp_url = self.url + date
+            has_exception = False
+            exception_message = ''
+            sleep_count = 1
+            retry_count = 10
             retry = 1
             
-            while retry < retryCount:
+            while retry < retry_count:
                 try:
-                    data_arr = self.getPageData(tempUrl, sleepCount)
-                    historyData = self.getHistoryData(data_arr, date)
-                    sunData = self.getSunData(data_arr, date)
-                    observationData = self.getObservationData(data_arr, date, retry)
-                    hasException = False
+                    data_arr = self.getPageData(temp_url, sleep_count)
+                    history_data = self.getHistoryData(data_arr, date)
+                    sun_data = self.getSunData(data_arr, date)
+                    observation_data = self.getObservationData(data_arr, date, retry)
+                    has_exception = False
                     break
                 except Exception as err:
-                    hasException = True
-                    exceptionMessage = str(err)
-                    print('Error with date: ' + date + ' error: ' + exceptionMessage)
+                    has_exception = True
+                    exception_message = str(err)
+                    print('Error with date: ' + date + ' error: ' + exception_message)
                     print('Retry Attempt: ' + str(retry))
-                    sleepCount += 1
+                    sleep_count += 1
                     retry += 1
                     
-            if not hasException:
-                self.appendToFile(self.weatherFileDataPath + self.weatherHistory, historyData)
-                self.appendToFile(self.weatherFileDataPath + self.weatherSunData, sunData)
-                self.appendToFile(self.weatherFileDataPath + self.weatherObservations, observationData)
+            if not has_exception:
+                self.appendToFile(self.weatherFileDataPath + self.weatherHistory, history_data)
+                self.appendToFile(self.weatherFileDataPath + self.weatherSunData, sun_data)
+                self.appendToFile(self.weatherFileDataPath + self.weatherObservations, observation_data)
             else:
                 print('Error with date: ' + date + ' writing to log')
-                self.appendToFile(self.weatherFileDataPath + 'log.txt', date + ' Error: ' + exceptionMessage + '\n')
+                self.appendToFile(self.weatherFileDataPath + 'log.txt', date + ' Error: ' + exception_message + '\n')
             
-            startDate = startDate + datetime.timedelta(days=1)
+            start_date = start_date + datetime.timedelta(days=1)
         print('All Done')
-        self.driver.close()
+        self.driver.quit()
 
-    def getPageData(self, tempUrl, sleepCount):
-        self.driver.get(tempUrl)
-        time.sleep(sleepCount)
+    def getPageData(self, temp_url, sleep_count):
+        self.driver.get(temp_url)
+        time.sleep(sleep_count)
         html = self.driver.page_source
          
         soup = BeautifulSoup(html, "html.parser")
@@ -96,113 +91,85 @@ class Scraper(object):
         
         return data_arr
     
-    def appendToFile(self, fileName, information):
-        file = open(fileName, "a")
+    def appendToFile(self, file_name, information):
+        file = open(file_name, "a")
         file.write(information)
         file.close()
     
     def getHistoryData(self, data_arr, date):
-        tempHighAvgRecord = [date, 'temperature_high', data_arr[4], data_arr[5], data_arr[6]]
-        tempLowAvgRecord = [date, 'temperature_low', data_arr[8], data_arr[9], data_arr[10]]
-        tempAvgAvgRecord = [date, 'temperature_avg', data_arr[12], data_arr[13], data_arr[14]]
-        precipAvgRecord = [date, 'precipitation', data_arr[19], data_arr[20], data_arr[21]]
+        temp_high_avg_record = [date, 'temperature_high', data_arr[4], data_arr[5], data_arr[6]]
+        temp_low_avg_record = [date, 'temperature_low', data_arr[8], data_arr[9], data_arr[10]]
+        temp_avg_avg_record = [date, 'temperature_avg', data_arr[12], data_arr[13], data_arr[14]]
+        precip_avg_record = [date, 'precipitation', data_arr[19], data_arr[20], data_arr[21]]
 #         dewpointTempAvgRecord = [date, 'dew_point', data_arr[26], data_arr[27], data_arr[28]]
-        dewpointTempHighAvgRecord = [date, 'dew_point_high', data_arr[30], data_arr[31], data_arr[32]]
-        dewpointTempLowAvgRecord = [date, 'dew_point_low', data_arr[34], data_arr[35], data_arr[36]]
-        dewpointTempAvgAvgRecord = [date, 'dew_point_avg', data_arr[38], data_arr[39], data_arr[40]]
-        windAvgRecord = [date, 'wind', data_arr[45], data_arr[46], data_arr[47]]
-        visibilityAvgRecord = [date, 'visibility', data_arr[49], data_arr[50], data_arr[51]]
+        dewpoint_temp_high_avg_record = [date, 'dew_point_high', data_arr[30], data_arr[31], data_arr[32]]
+        dewpoint_temp_low_avg_record = [date, 'dew_point_low', data_arr[34], data_arr[35], data_arr[36]]
+        dewpoint_temp_avg_avg_record = [date, 'dew_point_avg', data_arr[38], data_arr[39], data_arr[40]]
+        wind_avg_record = [date, 'wind', data_arr[45], data_arr[46], data_arr[47]]
+        visibility_avg_record = [date, 'visibility', data_arr[49], data_arr[50], data_arr[51]]
          
-        threeColumns = [
-            tempHighAvgRecord, 
-            tempLowAvgRecord, 
-            tempAvgAvgRecord,
-            precipAvgRecord,
+        three_columns = [
+            temp_high_avg_record,
+            temp_low_avg_record,
+            temp_avg_avg_record,
+            precip_avg_record,
 #             dewpointTempAvgRecord,
-            dewpointTempHighAvgRecord,
-            dewpointTempLowAvgRecord,
-            dewpointTempAvgAvgRecord,
-            windAvgRecord,
-            visibilityAvgRecord
+            dewpoint_temp_high_avg_record,
+            dewpoint_temp_low_avg_record,
+            dewpoint_temp_avg_avg_record,
+            wind_avg_record,
+            visibility_avg_record
         ]
          
-        historyTable = ''
-        historyTableToFile = ''
-        for row in threeColumns:
-            historyTable += '\t'.join(row) + '\n'
-            historyTableToFile += ','.join(row) + '\n'
-        print(historyTable)
+        history_table = ''
+        history_table_to_file = ''
+        for row in three_columns:
+            history_table += '\t'.join(row) + '\n'
+            history_table_to_file += ','.join(row) + '\n'
+        print(history_table)
         
-        return historyTableToFile
+        return history_table_to_file
     
     def getSunData(self, data_arr, date):
-        dayLength = data_arr[63]
+        day_length = data_arr[63]
         sunrise = data_arr[64]
         sunset = data_arr[65]
          
-        print('Day Length: ' + dayLength)
+        print('Day Length: ' + day_length)
         print('Sunrise: ' + sunrise)
         print('Sunset: ' + sunset)
-        sunData = ','.join([date, dayLength, sunrise, sunset]) + '\n'
+        sun_data = ','.join([date, day_length, sunrise, sunset]) + '\n'
         
-        return sunData
+        return sun_data
     
     def getObservationData(self, data_arr, date, retry):
         i = 0
-        #sometimes this can be off by 2
-        startIndex = 87 
-        if data_arr[startIndex].strip() == 'F':
+        # sometimes this can be off by 2
+        start_index = 87
+        if data_arr[start_index].strip() == 'F':
             if retry < 10:
                 raise Exception('Offset is messed up refresh page')
             print('offset changed to 85')
-            startIndex = 85
+            start_index = 85
         table = ''
-        tableToFile = ''
+        table_to_file = ''
         print(data_arr)
-        while startIndex < len(data_arr)-1:
-            timeOfDay     = data_arr[startIndex]
-            temp          = data_arr[startIndex+1]
-            dew           = data_arr[startIndex+3]
-            humidity      = data_arr[startIndex+5]
-            wind          = data_arr[startIndex+7]
-            windSpeed     = data_arr[startIndex+8]
-            windGust      = data_arr[startIndex+10]
-            pressure      = data_arr[startIndex+12]
-            precipitation = data_arr[startIndex+14]
-            condition     = data_arr[startIndex+16]
-            startIndex+=17
-            row = [date, timeOfDay, temp, dew, humidity, wind, windSpeed, windGust, pressure, precipitation, condition]
-            table+= '\t'.join(row) + '\n'
-            tableToFile += ','.join(row) + '\n'
-            i+=1
+        while start_index < len(data_arr)-1:
+            time_of_day = data_arr[start_index]
+            temp = data_arr[start_index+1]
+            dew = data_arr[start_index+3]
+            humidity = data_arr[start_index+5]
+            wind = data_arr[start_index+7]
+            wind_speed = data_arr[start_index+8]
+            wind_gust = data_arr[start_index+10]
+            pressure = data_arr[start_index+12]
+            precipitation = data_arr[start_index+14]
+            condition = data_arr[start_index+16]
+            start_index += 17
+            row = [date, time_of_day, temp, dew, humidity, wind, wind_speed, wind_gust, pressure, precipitation, condition]
+            table += '\t'.join(row) + '\n'
+            table_to_file += ','.join(row) + '\n'
+            i += 1
         print(table)
         
-        return tableToFile
-# indexes 4,5,6 actual high temperature, historic avg, record
-# indexes 8,9,10 actual low temp, historic avg, record
-# indexes 12, 13, 14 day average temp actual, historic avg, record
-# indexes 19, 20, 21, precipitation (inches) actual, historic avg, record
-# indexes 26, 27, 28 dew point F actual, historic avg, record
-# indexes 30, 31, 32 dew point high, historic avg, record
-# indexes 34, 35, 36 dew point low, historic avg, record
-# indexes 38, 39, 40 dew point avg, historic avg, record
-# indexes 45, 46, 47 wind MPH actual, historic avg, record
-# indexes 49, 50, 51 visibility actual, historic avg, record
-# indexes 63 day length
-# indexes 64 sun rise
-# indexes 65 sun set
-
-
-
-# indexes 87 12:00 AM
-# indexes 88 temperature
-# indexes 90 dew point
-# indexes 92 humidity
-# indexes 94 wind (string)
-# indexes 95 wind speed (mph)
-# indexes 97 wind gust (mph)
-# indexes 99 pressure (in)
-# indexes 101 precipitation
-# indexes 103 condition
-# indexes 104 time (+17)
-# repeat (24 rows)    
+        return table_to_file

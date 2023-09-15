@@ -43,10 +43,15 @@ class Scraper:
             
             while retry < retry_count:
                 try:
+                    print('attempting to get data')
                     data_arr = self.getPageData(temp_url, sleep_count)
+                    print('get page data')
                     history_data = self.getHistoryData(data_arr, date)
+                    print('get history data')
                     sun_data = self.getSunData(data_arr, date)
+                    print('get sun data')
                     observation_data = self.getObservationData(data_arr, date, retry)
+                    print('get observation data')
                     has_exception = False
                     break
                 except Exception as err:
@@ -58,8 +63,11 @@ class Scraper:
                     retry += 1
                     
             if not has_exception:
+                print('append 1')
                 self.appendToFile(self.weatherFileDataPath + self.weatherHistory, history_data)
+                print('append 2')
                 self.appendToFile(self.weatherFileDataPath + self.weatherSunData, sun_data)
+                print('append 3')
                 self.appendToFile(self.weatherFileDataPath + self.weatherObservations, observation_data)
             else:
                 print('Error with date: ' + date + ' writing to log')
@@ -70,8 +78,16 @@ class Scraper:
         self.driver.quit()
 
     def getPageData(self, temp_url, sleep_count):
-        self.driver.get(temp_url)
+        print('get page data function')
+        get_page = False
+        while not get_page:
+            try:
+                self.driver.get(temp_url)
+                get_page = True
+            except Exception as e:
+                print(e)
         time.sleep(sleep_count)
+        print('get page source')
         html = self.driver.page_source
          
         soup = BeautifulSoup(html, "html.parser")
